@@ -46,7 +46,7 @@
     <script>
         const video = document.getElementById('player');
         const btn = document.getElementById('btn-start');
-        const hls = new Hls();
+        let hls = null;
 
         // Lista das séries com seus dados
         const series = [
@@ -86,7 +86,7 @@
         ];
 
         let masterPlaylist = [];
-        let estadoAtual = 'inicio'; // inicio → desenho → propaganda → repete
+        let estadoAtual = 'inicio'; // Ordem fixa: inicio → desenho → propaganda → repete
 
         // Monta lista de episódios
         series.forEach(s => {
@@ -96,17 +96,17 @@
             }
         });
 
-        // Função com tratamento de erro
+        // Função para carregar vídeo com tratamento de erro
         function reproduzirFonte(fonte) {
             if (Hls.isSupported()) {
-                hls.destroy();
-                const novoHls = new Hls();
-                novoHls.loadSource(fonte);
-                novoHls.attachMedia(video);
-                // Se der erro ao carregar, pula para o próximo automaticamente
-                novoHls.on(Hls.Events.ERROR, (event, data) => {
+                if (hls) hls.destroy();
+                hls = new Hls();
+                hls.loadSource(fonte);
+                hls.attachMedia(video);
+                // Se der erro, pula automaticamente
+                hls.on(Hls.Events.ERROR, (_, data) => {
                     if (data.fatal) {
-                        novoHls.destroy();
+                        hls.destroy();
                         proximoConteudo();
                     }
                 });
@@ -117,28 +117,31 @@
             }
         }
 
-        // Sequência de reprodução
+        // 🎯 Ordem de reprodução garantida
         function proximoConteudo() {
             switch(estadoAtual) {
                 case 'inicio':
+                    // PRIMEIRO DE TUDO: playlist.m3u8
                     reproduzirFonte("playlist.m3u8");
                     estadoAtual = 'desenho';
                     break;
 
                 case 'desenho':
+                    // Depois: desenho aleatório
                     const aleatorio = masterPlaylist[Math.floor(Math.random() * masterPlaylist.length)];
                     reproduzirFonte(aleatorio);
                     estadoAtual = 'propaganda';
                     break;
 
                 case 'propaganda':
+                    // Depois: index.m3u8
                     reproduzirFonte("index.m3u8");
                     estadoAtual = 'desenho';
                     break;
             }
         }
 
-        // Função para voltar ao conteúdo anterior
+        // Voltar conteúdo
         function conteudoAnterior() {
             switch(estadoAtual) {
                 case 'desenho':
@@ -151,33 +154,30 @@
                     estadoAtual = 'desenho';
                     break;
                 case 'inicio':
-                    // Se já está no início, vai para a propaganda como retorno
                     reproduzirFonte("index.m3u8");
                     estadoAtual = 'propaganda';
                     break;
             }
         }
 
-        // Início
+        // Ao clicar no botão, começa a sequência
         btn.addEventListener('click', () => {
             btn.style.display = 'none';
             video.style.display = 'block';
             if (video.requestFullscreen) video.requestFullscreen();
-            proximoConteudo();
+            proximoConteudo(); // Começa direto pelo playlist.m3u8
         });
 
-        // Ao terminar um vídeo, vai para o próximo
+        // Quando terminar um vídeo, segue a ordem
         video.addEventListener('ended', proximoConteudo);
 
-        // Controles por teclado
+        // Controles: só setas esquerda/direita + play/pause
         document.addEventListener('keydown', (e) => {
             if (btn.style.display === 'none') {
                 e.preventDefault();
-                // Setas: esquerda = voltar, direita = avançar
-                if (e.keyCode === 37) conteudoAnterior();   // ← Esquerda
-                if (e.keyCode === 39) proximoConteudo();     // → Direita
-                // Enter / B = play/pause
-                if (e.keyCode === 13 || e.keyCode === 66) {
+                if (e.keyCode === 37) conteudoAnterior();   // ← Voltar
+                if (e.keyCode === 39) proximoConteudo();     // → Avançar
+                if (e.keyCode === 13 || e.keyCode === 66) { // Enter / B = play/pause
                     video.paused ? video.play() : video.pause();
                 }
             } else {
@@ -185,7 +185,6 @@
             }
         });
 
-        // Foco inicial para Fire Stick
         window.addEventListener('load', () => btn.focus());
     </script>
 </body>
