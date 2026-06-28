@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Sessão Nostalgia Automática</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        body { margin: 0; background: #000; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        #btn-start { padding: 40px 80px; font-size: 2rem; cursor: pointer; background: #8b4513; color: white; border: none; border-radius: 20px; }
+        /* Player estilizado para teste */
+        #player { width: 100vw; height: 100vh; display: none; }
+    </style>
+</head>
+<body>
+//TITULO
+    <button id="btn-start"> SESSÃO NOSTALGIA </button>
+    <video id="player" playsinline style="display:none;"></video>
+
+
+    <script>
+       const video = document.getElementById('player');
+const btn = document.getElementById('btn-start');
+const hls = new Hls();
+
+// Configuração: link base e total de episódios
+const series = [
+    { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/a/a-pantera-cor-de-rosa/", total: 129 },
+    { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/a/a-turma-do-manda-chuva-dublado/", total: 30 },
+    { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/c/capitao-planeta-dublado/", total: 65 },
+    { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/a/as-aventuras-de-jackie-chan-dublado/", total: 95 },
+    { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/c/cavalo-de-fogo-dublado/", total: 13 }
+];
+
+const ads = ["intervalo1.m3u8"];
+
+let masterPlaylist = [];
+
+// Função para gerar todos os links de uma série
+series.forEach(s => {
+    for (let i = 1; i <= s.total; i++) {
+        let num = i.toString().padStart(2, '0');
+        masterPlaylist.push(`${s.base}${num}.mp4/index.m3u8`);
+    }
+});
+
+// Embaralhar
+masterPlaylist.sort(() => Math.random() - 0.5);
+
+let currentIndex = 0;
+let isInterval = false;
+
+// FUNÇÃO PRÓXIMO PLAY
+function playNext() {
+    let source = "";
+
+    if (isInterval) {
+        source = ads[0]; 
+        console.log("▶ TOCANDO ANÚNCIO: " + source);
+        isInterval = false;
+    } else {
+        source = masterPlaylist[currentIndex];
+        console.log("▶ TOCANDO EPISÓDIO: " + source);
+        currentIndex = (currentIndex + 1) % masterPlaylist.length;
+        isInterval = true;
+    }
+
+    if (Hls.isSupported()) {
+        hls.loadSource(source);
+        hls.attachMedia(video);
+        video.play().catch(err => console.log("Aguardando interação do usuário..."));
+    } else {
+        video.src = source;
+        video.play();
+    }
+}
+
+// Evento quando o vídeo termina
+video.addEventListener('ended', playNext);
+
+// Evento ao clicar no botão
+btn.addEventListener('click', () => {
+    btn.style.display = 'none';
+    video.style.display = 'block';
+    if (video.requestFullscreen) video.requestFullscreen();
+    playNext();
+});
+    </script>
+</body>
+</html>
