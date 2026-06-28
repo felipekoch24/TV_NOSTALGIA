@@ -36,6 +36,13 @@
             height: 100vh; 
             display: none; 
         }
+        /* Classe para ocultar controles */
+        .controles-ocultos::-webkit-media-controls {
+            display: none !important;
+        }
+        .controles-ocultos {
+            -webkit-appearance: none;
+        }
     </style>
 </head>
 <body>
@@ -86,8 +93,7 @@
         ];
 
         let masterPlaylist = [];
-        // Estados da sequência: 0 = playlist, 1 = desenho, 2 = index
-        let estado = 0;
+        let estado = 0; // 0 = playlist, 1 = desenho, 2 = index
 
         // Monta lista com todos os episódios
         series.forEach(s => {
@@ -97,14 +103,12 @@
             }
         });
 
-        // Função para carregar o vídeo com tratamento de erro
         function reproduzirFonte(fonte) {
             if (Hls.isSupported()) {
                 if (hls) hls.destroy();
                 hls = new Hls();
                 hls.loadSource(fonte);
                 hls.attachMedia(video);
-                // Se der erro, pula automaticamente
                 hls.on(Hls.Events.ERROR, (_, data) => {
                     if (data.fatal) {
                         hls.destroy();
@@ -118,7 +122,6 @@
             }
         }
 
-        // Avança para o próximo conteúdo na ordem
         function proximoConteudo() {
             switch(estado) {
                 case 0:
@@ -137,7 +140,6 @@
             }
         }
 
-        // Volta para o conteúdo anterior
         function conteudoAnterior() {
             switch(estado) {
                 case 0:
@@ -156,23 +158,33 @@
             }
         }
 
-        // Início ao clicar no botão
+        // Ocultar barra de progresso/controles
+        function ocultarControles() {
+            video.classList.add("controles-ocultos");
+        }
+
+        // Mostrar barra de progresso/controles
+        function mostrarControles() {
+            video.classList.remove("controles-ocultos");
+        }
+
         btn.addEventListener('click', () => {
             btn.style.display = 'none';
             video.style.display = 'block';
             if (video.requestFullscreen) video.requestFullscreen();
-            proximoConteudo(); // Começa com playlist.m3u8
+            proximoConteudo();
         });
 
-        // Ao terminar um vídeo, segue a sequência
         video.addEventListener('ended', proximoConteudo);
 
-        // Controles: setas esquerda/direita + play/pause
+        // Teclas adicionadas para Fire Stick
         document.addEventListener('keydown', (e) => {
             if (btn.style.display === 'none') {
                 e.preventDefault();
                 if (e.keyCode === 37) conteudoAnterior();   // ← Voltar
                 if (e.keyCode === 39) proximoConteudo();     // → Avançar
+                if (e.keyCode === 40) ocultarControles();    // ↓ Ocultar controles
+                if (e.keyCode === 38) mostrarControles();    // ↑ Mostrar controles
                 if (e.keyCode === 13 || e.keyCode === 66) { // Enter / B = pausar/retomar
                     video.paused ? video.play() : video.pause();
                 }
