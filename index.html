@@ -48,7 +48,7 @@
         const btn = document.getElementById('btn-start');
         let hls = null;
 
-        // Lista das séries com seus dados
+        // Lista das séries e episódios
         const series = [
             { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/a/a-pantera-cor-de-rosa/", total: 129 },
             { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/a/a-turma-do-manda-chuva-dublado/", total: 30 },
@@ -86,17 +86,18 @@
         ];
 
         let masterPlaylist = [];
-        let estadoAtual = 'inicio'; // Ordem fixa: inicio → desenho → propaganda → repete
+        // Estados da sequência: 0 = playlist, 1 = desenho, 2 = index
+        let estado = 0;
 
-        // Monta lista de episódios
+        // Monta lista com todos os episódios
         series.forEach(s => {
             for (let i = 1; i <= s.total; i++) {
-                let num = i.toString().padStart(2, '0');
+                const num = String(i).padStart(2, '0');
                 masterPlaylist.push(`${s.base}${num}.mp4/index.m3u8`);
             }
         });
 
-        // Função para carregar vídeo com tratamento de erro
+        // Função para carregar o vídeo com tratamento de erro
         function reproduzirFonte(fonte) {
             if (Hls.isSupported()) {
                 if (hls) hls.destroy();
@@ -117,67 +118,62 @@
             }
         }
 
-        // 🎯 Ordem de reprodução garantida
+        // Avança para o próximo conteúdo na ordem
         function proximoConteudo() {
-            switch(estadoAtual) {
-                case 'inicio':
-                    // PRIMEIRO DE TUDO: playlist.m3u8
+            switch(estado) {
+                case 0:
                     reproduzirFonte("playlist.m3u8");
-                    estadoAtual = 'desenho';
+                    estado = 1;
                     break;
-
-                case 'desenho':
-                    // Depois: desenho aleatório
+                case 1:
                     const aleatorio = masterPlaylist[Math.floor(Math.random() * masterPlaylist.length)];
                     reproduzirFonte(aleatorio);
-                    estadoAtual = 'propaganda';
+                    estado = 2;
                     break;
-
-                case 'propaganda':
-                    // Depois: index.m3u8
+                case 2:
                     reproduzirFonte("index.m3u8");
-                    estadoAtual = 'desenho';
+                    estado = 1;
                     break;
             }
         }
 
-        // Voltar conteúdo
+        // Volta para o conteúdo anterior
         function conteudoAnterior() {
-            switch(estadoAtual) {
-                case 'desenho':
-                    reproduzirFonte("playlist.m3u8");
-                    estadoAtual = 'inicio';
+            switch(estado) {
+                case 0:
+                    estado = 2;
+                    reproduzirFonte("index.m3u8");
                     break;
-                case 'propaganda':
+                case 1:
+                    estado = 0;
+                    reproduzirFonte("playlist.m3u8");
+                    break;
+                case 2:
+                    estado = 1;
                     const aleatorio = masterPlaylist[Math.floor(Math.random() * masterPlaylist.length)];
                     reproduzirFonte(aleatorio);
-                    estadoAtual = 'desenho';
-                    break;
-                case 'inicio':
-                    reproduzirFonte("index.m3u8");
-                    estadoAtual = 'propaganda';
                     break;
             }
         }
 
-        // Ao clicar no botão, começa a sequência
+        // Início ao clicar no botão
         btn.addEventListener('click', () => {
             btn.style.display = 'none';
             video.style.display = 'block';
             if (video.requestFullscreen) video.requestFullscreen();
-            proximoConteudo(); // Começa direto pelo playlist.m3u8
+            proximoConteudo(); // Começa com playlist.m3u8
         });
 
-        // Quando terminar um vídeo, segue a ordem
+        // Ao terminar um vídeo, segue a sequência
         video.addEventListener('ended', proximoConteudo);
 
-        // Controles: só setas esquerda/direita + play/pause
+        // Controles: setas esquerda/direita + play/pause
         document.addEventListener('keydown', (e) => {
             if (btn.style.display === 'none') {
                 e.preventDefault();
                 if (e.keyCode === 37) conteudoAnterior();   // ← Voltar
                 if (e.keyCode === 39) proximoConteudo();     // → Avançar
-                if (e.keyCode === 13 || e.keyCode === 66) { // Enter / B = play/pause
+                if (e.keyCode === 13 || e.keyCode === 66) { // Enter / B = pausar/retomar
                     video.paused ? video.play() : video.pause();
                 }
             } else {
