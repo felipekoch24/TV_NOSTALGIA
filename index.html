@@ -36,44 +36,16 @@
             height: 100vh; 
             display: none; 
         }
-        /* Barra de controles na parte inferior */
-        #controles {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: none;
-            gap: 15px;
-            z-index: 20;
-        }
-        #controles button {
-            padding: 12px 25px;
-            font-size: 1rem;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            border: 2px solid #fff;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        #controles button:hover {
-            background: rgba(255,255,255,0.2);
-        }
     </style>
 </head>
 <body>
 
     <button id="btn-start">Clique aqui para começar sua SESSÃO NOSTALGIA</button>
     <video id="player" playsinline controls></video>
-    <div id="controles">
-        <button id="btn-pular">Pular para o próximo</button>
-    </div>
 
     <script>
         const video = document.getElementById('player');
         const btn = document.getElementById('btn-start');
-        const controles = document.getElementById('controles');
-        const btnPular = document.getElementById('btn-pular');
         const hls = new Hls();
 
         // Lista das séries com seus dados
@@ -114,9 +86,9 @@
         ];
 
         let masterPlaylist = [];
-        let estadoAtual = 'inicio'; // controla a sequência: inicio → desenho → propaganda → repete
+        let estadoAtual = 'inicio'; // inicio → desenho → propaganda → repete
 
-        // Monta a lista completa com todos os episódios
+        // Monta lista de episódios
         series.forEach(s => {
             for (let i = 1; i <= s.total; i++) {
                 let num = i.toString().padStart(2, '0');
@@ -124,68 +96,92 @@
             }
         });
 
-        // Função para carregar e reproduzir uma fonte HLS
+        // Função com tratamento de erro
         function reproduzirFonte(fonte) {
             if (Hls.isSupported()) {
                 hls.destroy();
-                hls.loadSource(fonte);
-                hls.attachMedia(video);
+                const novoHls = new Hls();
+                novoHls.loadSource(fonte);
+                novoHls.attachMedia(video);
+                // Se der erro ao carregar, pula para o próximo automaticamente
+                novoHls.on(Hls.Events.ERROR, (event, data) => {
+                    if (data.fatal) {
+                        novoHls.destroy();
+                        proximoConteudo();
+                    }
+                });
                 video.play().catch(() => {});
             } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
                 video.src = fonte;
-                video.play().catch(() => {});
+                video.play().catch(() => proximoConteudo());
             }
         }
 
-        // Função principal da sequência
+        // Sequência de reprodução
         function proximoConteudo() {
             switch(estadoAtual) {
                 case 'inicio':
-                    // Primeiro: playlist.m3u8
                     reproduzirFonte("playlist.m3u8");
                     estadoAtual = 'desenho';
                     break;
 
                 case 'desenho':
-                    // Depois: desenho aleatório
                     const aleatorio = masterPlaylist[Math.floor(Math.random() * masterPlaylist.length)];
                     reproduzirFonte(aleatorio);
                     estadoAtual = 'propaganda';
                     break;
 
                 case 'propaganda':
-                    // Depois: index.m3u8
                     reproduzirFonte("index.m3u8");
                     estadoAtual = 'desenho';
                     break;
             }
         }
 
-        // Início ao clicar no botão
+        // Função para voltar ao conteúdo anterior
+        function conteudoAnterior() {
+            switch(estadoAtual) {
+                case 'desenho':
+                    reproduzirFonte("playlist.m3u8");
+                    estadoAtual = 'inicio';
+                    break;
+                case 'propaganda':
+                    const aleatorio = masterPlaylist[Math.floor(Math.random() * masterPlaylist.length)];
+                    reproduzirFonte(aleatorio);
+                    estadoAtual = 'desenho';
+                    break;
+                case 'inicio':
+                    // Se já está no início, vai para a propaganda como retorno
+                    reproduzirFonte("index.m3u8");
+                    estadoAtual = 'propaganda';
+                    break;
+            }
+        }
+
+        // Início
         btn.addEventListener('click', () => {
             btn.style.display = 'none';
             video.style.display = 'block';
-            controles.style.display = 'flex'; // mostra os controles
             if (video.requestFullscreen) video.requestFullscreen();
             proximoConteudo();
         });
 
-        // Quando o vídeo termina, segue para o próximo
+        // Ao terminar um vídeo, vai para o próximo
         video.addEventListener('ended', proximoConteudo);
 
-        // Botão de pular
-        btnPular.addEventListener('click', proximoConteudo);
-
-        // Controle por teclado
+        // Controles por teclado
         document.addEventListener('keydown', (e) => {
-            if (e.keyCode === 13 || e.keyCode === 66) {
-                if (btn.style.display !== 'none') btn.click();
-                else video.paused ? video.play() : video.pause();
-            }
-            // 🆕 Tecla SETA PARA CIMA (código 38) para pular
-            if ((e.keyCode === 38 || e.keyCode === 83) && btn.style.display === 'none') {
-                e.preventDefault(); // evita rolar a página
-                proximoConteudo();
+            if (btn.style.display === 'none') {
+                e.preventDefault();
+                // Setas: esquerda = voltar, direita = avançar
+                if (e.keyCode === 37) conteudoAnterior();   // ← Esquerda
+                if (e.keyCode === 39) proximoConteudo();     // → Direita
+                // Enter / B = play/pause
+                if (e.keyCode === 13 || e.keyCode === 66) {
+                    video.paused ? video.play() : video.pause();
+                }
+            } else {
+                if (e.keyCode === 13 || e.keyCode === 66) btn.click();
             }
         });
 
