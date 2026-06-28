@@ -5,22 +5,78 @@
     <title>Sessão Nostalgia</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        body { margin: 0; background: #000; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-        #btn-start { padding: 40px 80px; font-size: 2rem; cursor: pointer; background: #8b4513; color: white; border: none; border-radius: 20px; transition: 0.3s; }
-        #btn-start:hover, #btn-start:focus { background: #a0522d; outline: 5px solid yellow; transform: scale(1.05); }
-        #player { width: 100vw; height: 100vh; display: none; }
+        body { 
+            margin: 0; 
+            background: #000; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            overflow: hidden; 
+            font-family: Arial, sans-serif;
+        }
+        #btn-start { 
+            padding: 40px 80px; 
+            font-size: 2rem; 
+            cursor: pointer; 
+            background: #8b4513; 
+            color: white; 
+            border: none; 
+            border-radius: 20px; 
+            transition: 0.3s; 
+            z-index: 10;
+        }
+        #btn-start:hover, #btn-start:focus { 
+            background: #a0522d; 
+            outline: 5px solid yellow; 
+            transform: scale(1.05); 
+        }
+        #player { 
+            width: 100vw; 
+            height: 100vh; 
+            display: none; 
+        }
+        /* Barra de controles na parte inferior */
+        #controles {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            gap: 15px;
+            z-index: 20;
+        }
+        #controles button {
+            padding: 12px 25px;
+            font-size: 1rem;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: 2px solid #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        #controles button:hover {
+            background: rgba(255,255,255,0.2);
+        }
     </style>
 </head>
 <body>
 
     <button id="btn-start">Clique aqui para começar sua SESSÃO NOSTALGIA</button>
-    <video id="player" playsinline style="display:none;"></video>
+    <video id="player" playsinline controls></video>
+    <div id="controles">
+        <button id="btn-pular">Pular para o próximo</button>
+    </div>
 
     <script>
         const video = document.getElementById('player');
         const btn = document.getElementById('btn-start');
+        const controles = document.getElementById('controles');
+        const btnPular = document.getElementById('btn-pular');
         const hls = new Hls();
 
+        // Lista das séries com seus dados
         const series = [
             { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/a/a-pantera-cor-de-rosa/", total: 129 },
             { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/a/a-turma-do-manda-chuva-dublado/", total: 30 },
@@ -57,52 +113,79 @@
             { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/d/duck-dodgers-3-temporada-dublado/", total: 13 }
         ];
 
-        const ads = ["index.m3u8"];
         let masterPlaylist = [];
-        let currentIndex = 0;
-        let rodandoArquivoLocal = true;
-        let tocarAds = false;
+        let estadoAtual = 'inicio'; // controla a sequência: inicio → desenho → propaganda → repete
 
+        // Monta a lista completa com todos os episódios
         series.forEach(s => {
             for (let i = 1; i <= s.total; i++) {
                 let num = i.toString().padStart(2, '0');
                 masterPlaylist.push(`${s.base}${num}.mp4/index.m3u8`);
             }
         });
-        masterPlaylist.sort(() => Math.random() - 0.5);
 
-        function playNext() {
-            let source = rodandoArquivoLocal ? "playlist.m3u8" : (tocarAds ? ads[0] : masterPlaylist[currentIndex]);
-            
-            if (rodandoArquivoLocal) rodandoArquivoLocal = false;
-            else if (tocarAds) tocarAds = false;
-            else {
-                currentIndex = (currentIndex + 1) % masterPlaylist.length;
-                tocarAds = true;
-            }
-
+        // Função para carregar e reproduzir uma fonte HLS
+        function reproduzirFonte(fonte) {
             if (Hls.isSupported()) {
-                hls.loadSource(source);
+                hls.destroy();
+                hls.loadSource(fonte);
                 hls.attachMedia(video);
+                video.play().catch(() => {});
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = fonte;
                 video.play().catch(() => {});
             }
         }
 
-        // Lógica única de inicialização
+        // Função principal da sequência
+        function proximoConteudo() {
+            switch(estadoAtual) {
+                case 'inicio':
+                    // Primeiro: playlist.m3u8
+                    reproduzirFonte("playlist.m3u8");
+                    estadoAtual = 'desenho';
+                    break;
+
+                case 'desenho':
+                    // Depois: desenho aleatório
+                    const aleatorio = masterPlaylist[Math.floor(Math.random() * masterPlaylist.length)];
+                    reproduzirFonte(aleatorio);
+                    estadoAtual = 'propaganda';
+                    break;
+
+                case 'propaganda':
+                    // Depois: index.m3u8
+                    reproduzirFonte("index.m3u8");
+                    estadoAtual = 'desenho';
+                    break;
+            }
+        }
+
+        // Início ao clicar no botão
         btn.addEventListener('click', () => {
             btn.style.display = 'none';
             video.style.display = 'block';
+            controles.style.display = 'flex'; // mostra os controles
             if (video.requestFullscreen) video.requestFullscreen();
-            playNext();
+            proximoConteudo();
         });
 
-        video.addEventListener('ended', playNext);
+        // Quando o vídeo termina, segue para o próximo
+        video.addEventListener('ended', proximoConteudo);
 
-        // Controle remoto
+        // Botão de pular
+        btnPular.addEventListener('click', proximoConteudo);
+
+        // Controle por teclado
         document.addEventListener('keydown', (e) => {
             if (e.keyCode === 13 || e.keyCode === 66) {
                 if (btn.style.display !== 'none') btn.click();
                 else video.paused ? video.play() : video.pause();
+            }
+            // 🆕 Tecla SETA PARA CIMA (código 38) para pular
+            if ((e.keyCode === 38 || e.keyCode === 83) && btn.style.display === 'none') {
+                e.preventDefault(); // evita rolar a página
+                proximoConteudo();
             }
         });
 
