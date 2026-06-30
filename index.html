@@ -55,53 +55,9 @@
         const btn = document.getElementById('btn-start');
         let hls = null;
 
-        // Lista das séries e episódios
-        const series = [
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/a/a-pantera-cor-de-rosa/", total: 129 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/a/a-turma-do-manda-chuva-dublado/", total: 30 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/c/capitao-planeta-dublado/", total: 65 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/a/as-aventuras-de-jackie-chan-dublado/", total: 95 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/c/cavalo-de-fogo-dublado/", total: 13 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/c/chaotic-dublado/", total: 66 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/d/dennis-o-pimentinha-dublado/", total: 13 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/d/dick-vigarista-e-muttley-dublado/", total: 34 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/c/corrida-maluca-dublado/", total: 34 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/g/gormiti-dublado/", total: 52 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/b/bob-esponja-1-temporada-dublado/", total: 20 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/b/bob-esponja-2-temporada-dublado/", total: 20 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/b/bob-esponja-3-temporada-dublado/", total: 20 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/b/bob-esponja-4-temporada-dublado/", total: 20 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/b/bob-esponja-5-temporada-dublado/", total: 20 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/b/bob-esponja-6-temporada-dublado/", total: 26 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/b/bob-esponja-7-temporada-dublado/", total: 26 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/b/bob-esponja-8-temporada-dublado/", total: 26 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/b/bob-esponja-9-temporada-dublado/", total: 26 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/b/bob-esponja-10-temporada-dublado/", total: 11 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/b/bob-esponja-11-temporada-dublado/", total: 26 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/b/bob-esponja-12-temporada-dublado/", total: 26 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/a/as-aventuras-de-tintim-dublado/", total: 39 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/s/superman-a-serie-animada-dublado/", total: 54 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/u/ultimate-homem-aranha-1-temporada-dublado/", total: 26 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/u/ultimate-homem-aranha-2-temporada-dublado/", total: 26 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/u/ultimate-homem-aranha-3-temporada-dublado/", total: 26 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/u/ultimate-homem-aranha-4-temporada-dublado/", total: 26 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/animes/power-rangers-spd-dublado/", total: 38 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/tokusatsus/p/power-rangers-samurai-dublado/", total: 20 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/d/duck-dodgers-1-temporada-dublado/", total: 13 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/d/duck-dodgers-2-temporada-dublado/", total: 13 },
-            { base: "https://cdn-s01.mywallpaper-4k-image.net/stream/d/duck-dodgers-3-temporada-dublado/", total: 13 }
-        ];
-
+        // Lista de séries e episódios REMOVIDA
         let masterPlaylist = [];
         let estado = 0; // 0 = playlist, 1 = desenho, 2 = index
-
-        // Monta lista com todos os episódios
-        series.forEach(s => {
-            for (let i = 1; i <= s.total; i++) {
-                const num = String(i).padStart(2, '0');
-                masterPlaylist.push(`${s.base}${num}.mp4/index.m3u8`);
-            }
-        });
 
         function reproduzirFonte(fonte) {
             if (Hls.isSupported()) {
@@ -129,8 +85,8 @@
                     estado = 1;
                     break;
                 case 1:
-                    const aleatorio = masterPlaylist[Math.floor(Math.random() * masterPlaylist.length)];
-                    reproduzirFonte(aleatorio);
+                    // Conteúdo aleatório REMOVIDO
+                    reproduzirFonte("index.m3u8");
                     estado = 2;
                     break;
                 case 2:
@@ -152,8 +108,7 @@
                     break;
                 case 2:
                     estado = 1;
-                    const aleatorio = masterPlaylist[Math.floor(Math.random() * masterPlaylist.length)];
-                    reproduzirFonte(aleatorio);
+                    reproduzirFonte("index.m3u8");
                     break;
             }
         }
