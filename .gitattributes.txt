@@ -1,0 +1,6 @@
+# Arquivos de texto (m3u8, txt, etc.) ficam sempre em LF
+*.m3u8 text eol=lf
+*.txt text eol=lf
+# Arquivos de vídeo NÃO são alterados
+*.ts binary
+*.mp4 binary
