@@ -36,7 +36,6 @@
             height: 100vh; 
             display: none; 
         }
-        /* Classe para ocultar controles */
         .controles-ocultos::-webkit-media-controls {
             display: none !important;
         }
@@ -54,10 +53,11 @@
         const video = document.getElementById('player');
         const btn = document.getElementById('btn-start');
         let hls = null;
+        let estado = 0; // 0 = Anúncio, 1 = Pica-Pau
 
-        // Lista de séries e episódios REMOVIDA
-        let masterPlaylist = [];
-        let estado = 0; // 0 = playlist, 1 = desenho, 2 = index
+        // ✅ LINKS PRONTOS E CORRETOS
+        const ANUNCIO = "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/playlist.m3u8";
+        const PICA_PAU = "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/pica-pau/index.m3u8";
 
         function reproduzirFonte(fonte) {
             if (Hls.isSupported()) {
@@ -67,6 +67,7 @@
                 hls.attachMedia(video);
                 hls.on(Hls.Events.ERROR, (_, data) => {
                     if (data.fatal) {
+                        console.error("Erro ao carregar:", data);
                         hls.destroy();
                         proximoConteudo();
                     }
@@ -79,46 +80,31 @@
         }
 
         function proximoConteudo() {
-            switch(estado) {
-                case 0:
-                    reproduzirFonte("playlist.m3u8");
-                    estado = 1;
-                    break;
-                case 1:
-                    // Conteúdo aleatório REMOVIDO
-                    reproduzirFonte("index.m3u8");
-                    estado = 2;
-                    break;
-                case 2:
-                    reproduzirFonte("index.m3u8");
-                    estado = 1;
-                    break;
+            if (estado === 0) {
+                // Terminou o anúncio → vai para o Pica-Pau
+                reproduzirFonte(PICA_PAU);
+                estado = 1;
+            } else {
+                // Terminou o Pica-Pau → volta para o anúncio
+                reproduzirFonte(ANUNCIO);
+                estado = 0;
             }
         }
 
         function conteudoAnterior() {
-            switch(estado) {
-                case 0:
-                    estado = 2;
-                    reproduzirFonte("index.m3u8");
-                    break;
-                case 1:
-                    estado = 0;
-                    reproduzirFonte("playlist.m3u8");
-                    break;
-                case 2:
-                    estado = 1;
-                    reproduzirFonte("index.m3u8");
-                    break;
+            if (estado === 1) {
+                reproduzirFonte(ANUNCIO);
+                estado = 0;
+            } else {
+                reproduzirFonte(PICA_PAU);
+                estado = 1;
             }
         }
 
-        // Ocultar barra de progresso/controles
         function ocultarControles() {
             video.classList.add("controles-ocultos");
         }
 
-        // Mostrar barra de progresso/controles
         function mostrarControles() {
             video.classList.remove("controles-ocultos");
         }
@@ -127,12 +113,14 @@
             btn.style.display = 'none';
             video.style.display = 'block';
             if (video.requestFullscreen) video.requestFullscreen();
-            proximoConteudo();
+            estado = 0;
+            reproduzirFonte(ANUNCIO);
         });
 
+        // Troca automaticamente quando o vídeo acabar
         video.addEventListener('ended', proximoConteudo);
 
-        // Teclas adicionadas para Fire Stick
+        // Controles para Fire Stick / Controle Remoto
         document.addEventListener('keydown', (e) => {
             if (btn.style.display === 'none') {
                 e.preventDefault();
@@ -140,7 +128,7 @@
                 if (e.keyCode === 39) proximoConteudo();     // → Avançar
                 if (e.keyCode === 40) ocultarControles();    // ↓ Ocultar controles
                 if (e.keyCode === 38) mostrarControles();    // ↑ Mostrar controles
-                if (e.keyCode === 13 || e.keyCode === 66) { // Enter / B = pausar/retomar
+                if (e.keyCode === 13 || e.keyCode === 66) { // Enter / Botão B = Pausar/Retomar
                     video.paused ? video.play() : video.pause();
                 }
             } else {
