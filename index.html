@@ -56,19 +56,31 @@
         const btn = document.getElementById('btn-start');
         let hls = null;
         let indiceAtual = 0;
+        let contadorEpisodios = 0;
         let tocandoAnuncio = false;
 
-        // ✅ LINKS
+        // ✅ ANÚNCIOS
         const ANUNCIOS_URL = "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/anuncios/index.m3u8";
-        
-        // ✅ LISTA DE EPISÓDIOS — ADICIONE AQUI
+
+        // ✅ LISTA DE EPISÓDIOS — AGORA COM 10 DO MANDA CHUVA
         const listaEpisodios = [
             { nome: "🤠 Pica-Pau", url: "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/pica-pau/index.m3u8" },
-            { nome: "💪 Popeye Ep01", url: "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/popeye/popeye01.m3u8" }
-            // { nome: "🐴 Cavalo de Fogo", url: "seu_link_aqui" },
+            { nome: "💪 Popeye Ep01", url: "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/popeye/popeye01.m3u8" },
+            
+            // 🐱 A TURMA DO MANDA CHUVA — Episódios 1 a 10
+            { nome: "🐱 Manda Chuva Ep01", url: "https://cdn.imagesskill.com/stream/a/a-turma-do-manda-chuva-dublado/01.mp4/index.m3u8" },
+            { nome: "🐱 Manda Chuva Ep02", url: "https://cdn.imagesskill.com/stream/a/a-turma-do-manda-chuva-dublado/02.mp4/index.m3u8" },
+            { nome: "🐱 Manda Chuva Ep03", url: "https://cdn.imagesskill.com/stream/a/a-turma-do-manda-chuva-dublado/03.mp4/index.m3u8" },
+            { nome: "🐱 Manda Chuva Ep04", url: "https://cdn.imagesskill.com/stream/a/a-turma-do-manda-chuva-dublado/04.mp4/index.m3u8" },
+            { nome: "🐱 Manda Chuva Ep05", url: "https://cdn.imagesskill.com/stream/a/a-turma-do-manda-chuva-dublado/05.mp4/index.m3u8" },
+            { nome: "🐱 Manda Chuva Ep06", url: "https://cdn.imagesskill.com/stream/a/a-turma-do-manda-chuva-dublado/06.mp4/index.m3u8" },
+            { nome: "🐱 Manda Chuva Ep07", url: "https://cdn.imagesskill.com/stream/a/a-turma-do-manda-chuva-dublado/07.mp4/index.m3u8" },
+            { nome: "🐱 Manda Chuva Ep08", url: "https://cdn.imagesskill.com/stream/a/a-turma-do-manda-chuva-dublado/08.mp4/index.m3u8" },
+            { nome: "🐱 Manda Chuva Ep09", url: "https://cdn.imagesskill.com/stream/a/a-turma-do-manda-chuva-dublado/09.mp4/index.m3u8" },
+            { nome: "🐱 Manda Chuva Ep10", url: "https://cdn.imagesskill.com/stream/a/a-turma-do-manda-chuva-dublado/10.mp4/index.m3u8" }
         ];
 
-        // Função geral para reproduzir qualquer fonte
+        // Função geral para reproduzir qualquer fonte .m3u8
         function reproduzirFonte(url) {
             if (Hls.isSupported()) {
                 if (hls) hls.destroy();
@@ -78,7 +90,7 @@
                 hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
                 hls.on(Hls.Events.ERROR, (_, dados) => {
                     if (dados.fatal) {
-                        console.error("Erro:", dados);
+                        console.error("Erro de reprodução:", dados);
                         hls.destroy();
                         proximoConteudo();
                     }
@@ -89,23 +101,29 @@
             }
         }
 
-        // Começa com anúncio, depois vai para o episódio
+        // Começa com anúncio de abertura
         function iniciarSessao() {
             tocandoAnuncio = true;
             reproduzirFonte(ANUNCIOS_URL);
         }
 
-        // Quando terminar algo, decide o que tocar em seguida
+        // Lógica: intercala anúncio a cada 2 episódios
         function proximoConteudo() {
             if (tocandoAnuncio) {
-                // Acabou o anúncio → toca o episódio
+                // Após anúncio → vai para episódio
                 tocandoAnuncio = false;
                 reproduzirFonte(listaEpisodios[indiceAtual].url);
             } else {
-                // Acabou o episódio → avança para o próximo e toca anúncio novamente
+                contadorEpisodios++;
                 indiceAtual = (indiceAtual + 1) % listaEpisodios.length;
-                tocandoAnuncio = true;
-                reproduzirFonte(ANUNCIOS_URL);
+
+                // A cada 2 episódios, toca anúncio novamente
+                if (contadorEpisodios % 2 === 0) {
+                    tocandoAnuncio = true;
+                    reproduzirFonte(ANUNCIOS_URL);
+                } else {
+                    reproduzirFonte(listaEpisodios[indiceAtual].url);
+                }
             }
         }
 
@@ -124,7 +142,7 @@
             iniciarSessao();
         });
 
-        // Quando o vídeo terminar, chama a próxima etapa
+        // Quando terminar, chama próxima etapa
         video.addEventListener('ended', proximoConteudo);
 
         // 🎮 Controles do Fire Stick
