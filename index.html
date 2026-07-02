@@ -5,36 +5,38 @@
     <title>Sessão Nostalgia</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
-            margin: 0; 
             background: #000; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            height: 100vh; 
-            overflow: hidden; 
-            font-family: Arial, sans-serif;
+            font-family: Arial, sans-serif; 
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
         }
         #btn-start { 
-            padding: 40px 80px; 
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 2rem 4rem; 
             font-size: 2rem; 
             cursor: pointer; 
             background: #8b4513; 
             color: white; 
             border: none; 
-            border-radius: 20px; 
+            border-radius: 16px; 
             transition: 0.3s; 
             z-index: 10;
         }
         #btn-start:hover, #btn-start:focus { 
             background: #a0522d; 
-            outline: 5px solid yellow; 
-            transform: scale(1.05); 
+            outline: 4px solid #ffcc00; 
+            transform: translate(-50%, -50%) scale(1.05); 
         }
         #player { 
             width: 100vw; 
             height: 100vh; 
             display: none; 
+            background: #000;
         }
         .controles-ocultos::-webkit-media-controls {
             display: none !important;
@@ -47,89 +49,96 @@
 <body>
 
     <button id="btn-start">Clique aqui para começar sua SESSÃO NOSTALGIA</button>
-    <video id="player" playsinline controls></video>
+    <video id="player" playsinline controls class="controles-ocultos"></video>
 
     <script>
         const video = document.getElementById('player');
         const btn = document.getElementById('btn-start');
         let hls = null;
-        let estado = 0; // 0 = Anúncio, 1 = Pica-Pau
+        let indiceAtual = 0;
+        let tocandoAnuncio = false;
 
-        // ✅ LINKS PRONTOS E CORRETOS
-        const ANUNCIO = "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/playlist.m3u8";
-        const PICA_PAU = "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/pica-pau/index.m3u8";
+        // ✅ LINKS
+        const ANUNCIOS_URL = "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/anuncios/index.m3u8";
+        
+        // ✅ LISTA DE EPISÓDIOS — ADICIONE AQUI
+        const listaEpisodios = [
+            { nome: "🤠 Pica-Pau", url: "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/pica-pau/index.m3u8" },
+            { nome: "💪 Popeye Ep01", url: "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/popeye/popeye01.m3u8" }
+            // { nome: "🐴 Cavalo de Fogo", url: "seu_link_aqui" },
+        ];
 
-        function reproduzirFonte(fonte) {
+        // Função geral para reproduzir qualquer fonte
+        function reproduzirFonte(url) {
             if (Hls.isSupported()) {
                 if (hls) hls.destroy();
-                hls = new Hls();
-                hls.loadSource(fonte);
+                hls = new Hls({ maxBufferSize: 30 * 1000 * 1000 });
+                hls.loadSource(url);
                 hls.attachMedia(video);
-                hls.on(Hls.Events.ERROR, (_, data) => {
-                    if (data.fatal) {
-                        console.error("Erro ao carregar:", data);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+                hls.on(Hls.Events.ERROR, (_, dados) => {
+                    if (dados.fatal) {
+                        console.error("Erro:", dados);
                         hls.destroy();
                         proximoConteudo();
                     }
                 });
-                video.play().catch(() => {});
             } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                video.src = fonte;
+                video.src = url;
                 video.play().catch(() => proximoConteudo());
             }
         }
 
+        // Começa com anúncio, depois vai para o episódio
+        function iniciarSessao() {
+            tocandoAnuncio = true;
+            reproduzirFonte(ANUNCIOS_URL);
+        }
+
+        // Quando terminar algo, decide o que tocar em seguida
         function proximoConteudo() {
-            if (estado === 0) {
-                // Terminou o anúncio → vai para o Pica-Pau
-                reproduzirFonte(PICA_PAU);
-                estado = 1;
+            if (tocandoAnuncio) {
+                // Acabou o anúncio → toca o episódio
+                tocandoAnuncio = false;
+                reproduzirFonte(listaEpisodios[indiceAtual].url);
             } else {
-                // Terminou o Pica-Pau → volta para o anúncio
-                reproduzirFonte(ANUNCIO);
-                estado = 0;
+                // Acabou o episódio → avança para o próximo e toca anúncio novamente
+                indiceAtual = (indiceAtual + 1) % listaEpisodios.length;
+                tocandoAnuncio = true;
+                reproduzirFonte(ANUNCIOS_URL);
             }
         }
 
+        // Volta para o conteúdo anterior
         function conteudoAnterior() {
-            if (estado === 1) {
-                reproduzirFonte(ANUNCIO);
-                estado = 0;
-            } else {
-                reproduzirFonte(PICA_PAU);
-                estado = 1;
-            }
+            indiceAtual = (indiceAtual - 1 + listaEpisodios.length) % listaEpisodios.length;
+            tocandoAnuncio = true;
+            reproduzirFonte(ANUNCIOS_URL);
         }
 
-        function ocultarControles() {
-            video.classList.add("controles-ocultos");
-        }
-
-        function mostrarControles() {
-            video.classList.remove("controles-ocultos");
-        }
-
+        // Botão de início
         btn.addEventListener('click', () => {
             btn.style.display = 'none';
             video.style.display = 'block';
-            if (video.requestFullscreen) video.requestFullscreen();
-            estado = 0;
-            reproduzirFonte(ANUNCIO);
+            if (video.requestFullscreen) video.requestFullscreen().catch(() => {});
+            iniciarSessao();
         });
 
-        // Troca automaticamente quando o vídeo acabar
+        // Quando o vídeo terminar, chama a próxima etapa
         video.addEventListener('ended', proximoConteudo);
 
-        // Controles para Fire Stick / Controle Remoto
+        // 🎮 Controles do Fire Stick
         document.addEventListener('keydown', (e) => {
             if (btn.style.display === 'none') {
                 e.preventDefault();
-                if (e.keyCode === 37) conteudoAnterior();   // ← Voltar
-                if (e.keyCode === 39) proximoConteudo();     // → Avançar
-                if (e.keyCode === 40) ocultarControles();    // ↓ Ocultar controles
-                if (e.keyCode === 38) mostrarControles();    // ↑ Mostrar controles
-                if (e.keyCode === 13 || e.keyCode === 66) { // Enter / Botão B = Pausar/Retomar
-                    video.paused ? video.play() : video.pause();
+                switch(e.keyCode) {
+                    case 37: conteudoAnterior(); break;
+                    case 39: proximoConteudo(); break;
+                    case 38: video.classList.remove("controles-ocultos"); break;
+                    case 40: video.classList.add("controles-ocultos"); break;
+                    case 13: case 66:
+                        video.paused ? video.play() : video.pause();
+                        break;
                 }
             } else {
                 if (e.keyCode === 13 || e.keyCode === 66) btn.click();
