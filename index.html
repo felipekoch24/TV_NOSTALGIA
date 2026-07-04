@@ -13,24 +13,18 @@
             height: 100vh;
             overflow: hidden;
         }
-        #btn-start { 
+        #aviso { 
             position: absolute;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             padding: 2rem 4rem; 
             font-size: 2rem; 
-            cursor: pointer; 
+            text-align: center;
             background: #8b4513; 
             color: white; 
-            border: none; 
             border-radius: 16px; 
-            transition: 0.3s; 
             z-index: 10;
-        }
-        #btn-start:hover, #btn-start:focus { 
-            background: #a0522d; 
-            outline: 4px solid #ffcc00; 
-            transform: translate(-50%, -50%) scale(1.05); 
+            outline: 4px solid #ffcc00;
         }
         #player { 
             width: 100vw; 
@@ -48,122 +42,94 @@
 </head>
 <body>
 
-    <button id="btn-start">Clique aqui para começar sua SESSÃO NOSTALGIA</button>
+    <div id="aviso">Aperte ENTER para começar sua SESSÃO NOSTALGIA</div>
     <video id="player" playsinline controls class="controles-ocultos"></video>
 
     <script>
         const video = document.getElementById('player');
-        const btn = document.getElementById('btn-start');
+        const aviso = document.getElementById('aviso');
         let hls = null;
-        let indiceAtual = 0;
-        let contadorEpisodios = 0;
-        let tocandoAnuncio = false;
+        let indice = 0;
+        let modo = 'abertura';
 
-        // ✅ ANÚNCIOS
-        const ANUNCIOS_URL = "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/anuncios/index.m3u8";
+        // ✅ Links corretos
+        const ANUNCIO_ABERTURA = "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/anuncios/abertura01.m3u8";
+        const ANUNCIO_ENTRE = "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/anuncios/anuncio02.m3u8";
 
-        // ✅ LISTA DE EPISÓDIOS — AGORA COM 10 DO MANDA CHUVA
-        const listaEpisodios = [
+        const EPISODIOS = [
             { nome: "🤠 Pica-Pau", url: "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/pica-pau/index.m3u8" },
-            { nome: "💪 Popeye Ep01", url: "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/popeye/popeye01.m3u8" },
-            
-            // 🐱 A TURMA DO MANDA CHUVA — Episódios 1 a 10
-            { nome: "🐱 Manda Chuva Ep01", url: "https://cdn.imagesskill.com/stream/a/a-turma-do-manda-chuva-dublado/01.mp4/index.m3u8" },
-            { nome: "🐱 Manda Chuva Ep02", url: "https://cdn.imagesskill.com/stream/a/a-turma-do-manda-chuva-dublado/02.mp4/index.m3u8" },
-            { nome: "🐱 Manda Chuva Ep03", url: "https://cdn.imagesskill.com/stream/a/a-turma-do-manda-chuva-dublado/03.mp4/index.m3u8" },
-            { nome: "🐱 Manda Chuva Ep04", url: "https://cdn.imagesskill.com/stream/a/a-turma-do-manda-chuva-dublado/04.mp4/index.m3u8" },
-            { nome: "🐱 Manda Chuva Ep05", url: "https://cdn.imagesskill.com/stream/a/a-turma-do-manda-chuva-dublado/05.mp4/index.m3u8" },
-            { nome: "🐱 Manda Chuva Ep06", url: "https://cdn.imagesskill.com/stream/a/a-turma-do-manda-chuva-dublado/06.mp4/index.m3u8" },
-            { nome: "🐱 Manda Chuva Ep07", url: "https://cdn.imagesskill.com/stream/a/a-turma-do-manda-chuva-dublado/07.mp4/index.m3u8" },
-            { nome: "🐱 Manda Chuva Ep08", url: "https://cdn.imagesskill.com/stream/a/a-turma-do-manda-chuva-dublado/08.mp4/index.m3u8" },
-            { nome: "🐱 Manda Chuva Ep09", url: "https://cdn.imagesskill.com/stream/a/a-turma-do-manda-chuva-dublado/09.mp4/index.m3u8" },
-            { nome: "🐱 Manda Chuva Ep10", url: "https://cdn.imagesskill.com/stream/a/a-turma-do-manda-chuva-dublado/10.mp4/index.m3u8" }
+            { nome: "💪 Popeye Ep01", url: "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/popeye/popeye01.m3u8" }
         ];
 
-        // Função geral para reproduzir qualquer fonte .m3u8
-        function reproduzirFonte(url) {
+        // Função de carregamento
+        function carregar(url) {
+            if (!url) return;
             if (Hls.isSupported()) {
                 if (hls) hls.destroy();
                 hls = new Hls({ maxBufferSize: 30 * 1000 * 1000 });
                 hls.loadSource(url);
                 hls.attachMedia(video);
                 hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
-                hls.on(Hls.Events.ERROR, (_, dados) => {
-                    if (dados.fatal) {
-                        console.error("Erro de reprodução:", dados);
-                        hls.destroy();
-                        proximoConteudo();
-                    }
-                });
-            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                hls.on(Hls.Events.ERROR, (_, e) => { if (e.fatal) { hls.destroy(); proximo(); } });
+            } else {
                 video.src = url;
-                video.play().catch(() => proximoConteudo());
+                video.play().catch(() => proximo());
             }
         }
 
-        // Começa com anúncio de abertura
-        function iniciarSessao() {
-            tocandoAnuncio = true;
-            reproduzirFonte(ANUNCIOS_URL);
-        }
-
-        // Lógica: intercala anúncio a cada 2 episódios
-        function proximoConteudo() {
-            if (tocandoAnuncio) {
-                // Após anúncio → vai para episódio
-                tocandoAnuncio = false;
-                reproduzirFonte(listaEpisodios[indiceAtual].url);
-            } else {
-                contadorEpisodios++;
-                indiceAtual = (indiceAtual + 1) % listaEpisodios.length;
-
-                // A cada 2 episódios, toca anúncio novamente
-                if (contadorEpisodios % 2 === 0) {
-                    tocandoAnuncio = true;
-                    reproduzirFonte(ANUNCIOS_URL);
-                } else {
-                    reproduzirFonte(listaEpisodios[indiceAtual].url);
-                }
+        // Lógica de sequência e loop
+        function proximo() {
+            if (modo === 'abertura') {
+                modo = 'episodio';
+                indice = 0;
+                carregar(EPISODIOS[indice].url);
+            } else if (modo === 'episodio') {
+                modo = 'anuncio';
+                carregar(ANUNCIO_ENTRE);
+            } else if (modo === 'anuncio') {
+                modo = 'episodio';
+                indice = (indice + 1) % EPISODIOS.length;
+                carregar(EPISODIOS[indice].url);
             }
         }
 
-        // Volta para o conteúdo anterior
-        function conteudoAnterior() {
-            indiceAtual = (indiceAtual - 1 + listaEpisodios.length) % listaEpisodios.length;
-            tocandoAnuncio = true;
-            reproduzirFonte(ANUNCIOS_URL);
+        function anterior() {
+            indice = (indice - 1 + EPISODIOS.length) % EPISODIOS.length;
+            modo = 'anuncio';
+            carregar(ANUNCIO_ENTRE);
         }
 
-        // Botão de início
-        btn.addEventListener('click', () => {
-            btn.style.display = 'none';
-            video.style.display = 'block';
-            if (video.requestFullscreen) video.requestFullscreen().catch(() => {});
-            iniciarSessao();
-        });
-
-        // Quando terminar, chama próxima etapa
-        video.addEventListener('ended', proximoConteudo);
-
-        // 🎮 Controles do Fire Stick
+        // 🎮 AQUI: ENTER para começar
         document.addEventListener('keydown', (e) => {
-            if (btn.style.display === 'none') {
-                e.preventDefault();
-                switch(e.keyCode) {
-                    case 37: conteudoAnterior(); break;
-                    case 39: proximoConteudo(); break;
-                    case 38: video.classList.remove("controles-ocultos"); break;
-                    case 40: video.classList.add("controles-ocultos"); break;
-                    case 13: case 66:
-                        video.paused ? video.play() : video.pause();
-                        break;
+            // Se ainda não começou
+            if (aviso.style.display !== 'none') {
+                if (e.key === 'Enter' || e.keyCode === 13) {
+                    aviso.style.display = 'none';
+                    video.style.display = 'block';
+                    if (video.requestFullscreen) video.requestFullscreen().catch(() => {});
+                    modo = 'abertura';
+                    carregar(ANUNCIO_ABERTURA);
                 }
-            } else {
-                if (e.keyCode === 13 || e.keyCode === 66) btn.click();
+                return;
+            }
+
+            // Controles depois de começar
+            e.preventDefault();
+            switch(e.keyCode) {
+                case 37: anterior(); break;
+                case 39: proximo(); break;
+                case 38: video.classList.remove("controles-ocultos"); break;
+                case 40: video.classList.add("controles-ocultos"); break;
+                case 13: case 66:
+                    video.paused ? video.play() : video.pause();
+                    break;
             }
         });
 
-        window.addEventListener('load', () => btn.focus());
+        // Ao terminar um vídeo, vai para o próximo
+        video.addEventListener('ended', proximo);
+
+        window.addEventListener('load', () => aviso.focus());
     </script>
 </body>
 </html>
