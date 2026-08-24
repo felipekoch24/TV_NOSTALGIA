@@ -46,27 +46,62 @@
         .controles-ocultos {
             -webkit-appearance: none;
         }
+        /* HUD para o Modo Desenvolvedor */
+        #dev-hud {
+            display: none;
+            position: absolute;
+            top: 10px; left: 10px;
+            background: rgba(0, 0, 0, 0.85);
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 10px 14px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            z-index: 20;
+            border-radius: 6px;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
 
+    <div id="dev-hud">MODO DEV ATIVO</div>
     <div id="aviso" tabindex="0">Aperte ENTER ou TOQUE na tela para começar</div>
     <video id="player" playsinline webkit-playsinline controls class="controles-ocultos"></video>
 
     <script>
         const video = document.getElementById('player');
         const aviso = document.getElementById('aviso');
+        const devHud = document.getElementById('dev-hud');
+        
         let hls = null;
         let indice = 0;
         let modo = 'abertura';
         let iniciado = false;
 
+        // Ativa o Modo Dev se tiver ?dev=true na URL ou se pressionar a tecla 'D'
+        const urlParams = new URLSearchParams(window.location.search);
+        let MODO_DEV = urlParams.get('dev') === 'true';
+
         let ANUNCIO_ABERTURA = "";
         let ANUNCIO_ENTRE = "";
         let EPISODIOS = [];
 
-        // URL RAW do seu playlist.json no GitHub
         const URL_PLAYLIST = "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/playlist.json";
+
+        function atualizarHud() {
+            if (!MODO_DEV) return;
+            devHud.style.display = 'block';
+            const nomeEp = EPISODIOS[indice] ? EPISODIOS[indice].nome : '---';
+            devHud.innerHTML = `🛠️ <b>MODO DEV</b><br>Modo Atual: ${modo}<br>Episódio [${indice + 1}/${EPISODIOS.length}]: ${nomeEp}<br><br><small>[D] Ativa/Desativa Dev | [S] Pula pra Frente | [A] Volta Ep | [1-9] Pula direto p/ Ep</small>`;
+        }
+
+        function embaralhar(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
 
         async function carregarPlaylist() {
             try {
@@ -76,7 +111,12 @@
                 const dados = await resposta.json();
                 ANUNCIO_ABERTURA = dados.anuncios.abertura;
                 ANUNCIO_ENTRE = dados.anuncios.entre_episodios;
+                
                 EPISODIOS = dados.episodios;
+                // No modo dev mantém a ordem original para facilitar o teste por ID, senão embaralha
+                if (!MODO_DEV) {
+                    embaralhar(EPISODIOS);
+                }
             } catch (erro) {
                 console.error("Erro ao carregar o playlist.json:", erro);
             }
@@ -84,14 +124,13 @@
 
         function carregar(url) {
             if (!url) return;
+            atualizarHud();
 
-            // Safari e iOS (HLS Nativo)
             if (video.canPlayType('application/vnd.apple.mpegurl')) {
                 if (hls) { hls.destroy(); hls = null; }
                 video.src = url;
                 video.play().catch(() => proximo());
             } 
-            // Android, Firestick e navegadores baseados em Chromium (via hls.js)
             else if (Hls.isSupported()) {
                 if (hls) hls.destroy();
                 hls = new Hls({ maxBufferSize: 30 * 1000 * 1000, enableWorker: true });
@@ -117,7 +156,11 @@
                 carregar(ANUNCIO_ENTRE);
             } else if (modo === 'anuncio') {
                 modo = 'episodio';
-                indice = (indice + 1) % EPISODIOS.length;
+                indice++;
+                if (indice >= EPISODIOS.length) {
+                    if (!MODO_DEV) embaralhar(EPISODIOS);
+                    indice = 0;
+                }
                 carregar(EPISODIOS[indice].url);
             }
         }
@@ -156,6 +199,40 @@
             const key = e.key;
             const code = e.keyCode;
 
+            // Atalho universal para ativar/desativar MODO DEV a qualquer momento
+            if (key === 'd' || key === 'D') {
+                MODO_DEV = !MODO_DEV;
+                devHud.style.display = MODO_DEV ? 'block' : 'none';
+                atualizarHud();
+                return;
+            }
+
+            // ATALHOS EXCLUSIVOS DO MODO DEV
+            if (MODO_DEV) {
+                // Tecla S: Força pular a mídia atual imediatamente (anúncio ou episódio)
+                if (key === 's' || key === 'S') {
+                    proximo();
+                    return;
+                }
+                // Tecla A: Força voltar para o episódio anterior
+                if (key === 'a' || key === 'A') {
+                    modo = 'episodio';
+                    indice = (indice - 1 + EPISODIOS.length) % EPISODIOS.length;
+                    carregar(EPISODIOS[indice].url);
+                    return;
+                }
+                // Teclas de 1 a 9: Pula diretamente para o número do episódio correspondente
+                if (key >= '1' && key <= '9') {
+                    const num = parseInt(key) - 1;
+                    if (num < EPISODIOS.length) {
+                        modo = 'episodio';
+                        indice = num;
+                        carregar(EPISODIOS[indice].url);
+                    }
+                    return;
+                }
+            }
+
             if (!iniciado) {
                 if (key === 'Enter' || code === 13 || code === 66) {
                     iniciarSessao();
@@ -163,6 +240,7 @@
                 return;
             }
 
+            // CONTROLES PADRÃO (USUÁRIO)
             if (key === 'ArrowLeft' || code === 37 || code === 227) {
                 e.preventDefault();
                 anterior();
