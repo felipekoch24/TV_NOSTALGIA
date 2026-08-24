@@ -13,6 +13,31 @@
       "id": 2,
       "nome": "💪 Popeye Ep01",
       "url": "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/popeye/popeye01.m3u8"
+    },
+    {
+      "id": 3,
+      "nome": "Nostalgia 01",
+      "url": "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/nostalgia01/nostalgia01.m3u8"
+    },
+    {
+      "id": 4,
+      "nome": "Nostalgia 02",
+      "url": "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/nostalgia02/nostalgia02.m3u8"
+    },
+    {
+      "id": 5,
+      "nome": "Nostalgia 03",
+      "url": "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/nostalgia03/nostalgia03.m3u8"
+    },
+    {
+      "id": 6,
+      "nome": "Nostalgia 04",
+      "url": "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/nostalgia04/nostalgia04.m3u8"
+    },
+    {
+      "id": 7,
+      "nome": "Nostalgia 05",
+      "url": "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/nostalgia05/nostalgia05.m3u8"
     }
   ]
 }
