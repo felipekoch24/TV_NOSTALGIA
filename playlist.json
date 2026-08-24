@@ -1,0 +1,18 @@
+{
+  "anuncios": {
+    "abertura": "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/anuncios/abertura01.m3u8",
+    "entre_episodios": "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/anuncios/anuncio02.m3u8"
+  },
+  "episodios": [
+    {
+      "id": 1,
+      "nome": "🤠 Pica-Pau",
+      "url": "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/pica-pau/index.m3u8"
+    },
+    {
+      "id": 2,
+      "nome": "💪 Popeye Ep01",
+      "url": "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/popeye/popeye01.m3u8"
+    }
+  ]
+}
