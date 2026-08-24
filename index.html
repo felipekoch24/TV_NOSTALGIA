@@ -2,6 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sessão Nostalgia</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
@@ -11,26 +12,33 @@
             font-family: Arial, sans-serif; 
             color: #fff;
             height: 100vh;
+            width: 100vw;
             overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
         }
         #aviso { 
             position: absolute;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            padding: 2rem 4rem; 
-            font-size: 2rem; 
+            padding: 2rem; 
+            font-size: 1.8rem; 
             text-align: center;
             background: #8b4513; 
             color: white; 
             border-radius: 16px; 
             z-index: 10;
             outline: 4px solid #ffcc00;
+            cursor: pointer;
+            width: 85%;
+            max-width: 500px;
         }
         #player { 
             width: 100vw; 
             height: 100vh; 
             display: none; 
             background: #000;
+            object-fit: contain;
         }
         .controles-ocultos::-webkit-media-controls {
             display: none !important;
@@ -42,8 +50,8 @@
 </head>
 <body>
 
-    <div id="aviso">Aperte ENTER para começar sua SESSÃO NOSTALGIA</div>
-    <video id="player" playsinline controls class="controles-ocultos"></video>
+    <div id="aviso" tabindex="0">Aperte ENTER ou TOQUE na tela para começar</div>
+    <video id="player" playsinline webkit-playsinline controls class="controles-ocultos"></video>
 
     <script>
         const video = document.getElementById('player');
@@ -51,22 +59,42 @@
         let hls = null;
         let indice = 0;
         let modo = 'abertura';
+        let iniciado = false;
 
-        // ✅ Links corretos
-        const ANUNCIO_ABERTURA = "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/anuncios/abertura01.m3u8";
-        const ANUNCIO_ENTRE = "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/anuncios/anuncio02.m3u8";
+        let ANUNCIO_ABERTURA = "";
+        let ANUNCIO_ENTRE = "";
+        let EPISODIOS = [];
 
-        const EPISODIOS = [
-            { nome: "🤠 Pica-Pau", url: "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/pica-pau/index.m3u8" },
-            { nome: "💪 Popeye Ep01", url: "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/popeye/popeye01.m3u8" }
-        ];
+        // URL RAW do seu playlist.json no GitHub
+        const URL_PLAYLIST = "https://raw.githubusercontent.com/felipekoch24/TV_NOSTALGIA/main/playlist.json";
 
-        // Função de carregamento
+        async function carregarPlaylist() {
+            try {
+                const resposta = await fetch(URL_PLAYLIST);
+                if (!resposta.ok) throw new Error(`HTTP error! status: ${resposta.status}`);
+                
+                const dados = await resposta.json();
+                ANUNCIO_ABERTURA = dados.anuncios.abertura;
+                ANUNCIO_ENTRE = dados.anuncios.entre_episodios;
+                EPISODIOS = dados.episodios;
+            } catch (erro) {
+                console.error("Erro ao carregar o playlist.json:", erro);
+            }
+        }
+
         function carregar(url) {
             if (!url) return;
-            if (Hls.isSupported()) {
+
+            // Safari e iOS (HLS Nativo)
+            if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                if (hls) { hls.destroy(); hls = null; }
+                video.src = url;
+                video.play().catch(() => proximo());
+            } 
+            // Android, Firestick e navegadores baseados em Chromium (via hls.js)
+            else if (Hls.isSupported()) {
                 if (hls) hls.destroy();
-                hls = new Hls({ maxBufferSize: 30 * 1000 * 1000 });
+                hls = new Hls({ maxBufferSize: 30 * 1000 * 1000, enableWorker: true });
                 hls.loadSource(url);
                 hls.attachMedia(video);
                 hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
@@ -77,8 +105,9 @@
             }
         }
 
-        // Lógica de sequência e loop
         function proximo() {
+            if (EPISODIOS.length === 0) return;
+
             if (modo === 'abertura') {
                 modo = 'episodio';
                 indice = 0;
@@ -94,42 +123,74 @@
         }
 
         function anterior() {
+            if (EPISODIOS.length === 0) return;
             indice = (indice - 1 + EPISODIOS.length) % EPISODIOS.length;
             modo = 'anuncio';
             carregar(ANUNCIO_ENTRE);
         }
 
-        // 🎮 AQUI: ENTER para começar
+        function iniciarSessao() {
+            if (iniciado || !ANUNCIO_ABERTURA) return;
+            iniciado = true;
+
+            aviso.style.display = 'none';
+            video.style.display = 'block';
+
+            if (video.requestFullscreen) {
+                video.requestFullscreen().catch(() => {});
+            } else if (video.webkitRequestFullscreen) {
+                video.webkitRequestFullscreen().catch(() => {});
+            }
+
+            modo = 'abertura';
+            carregar(ANUNCIO_ABERTURA);
+        }
+
+        aviso.addEventListener('click', iniciarSessao);
+        aviso.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            iniciarSessao();
+        });
+
         document.addEventListener('keydown', (e) => {
-            // Se ainda não começou
-            if (aviso.style.display !== 'none') {
-                if (e.key === 'Enter' || e.keyCode === 13) {
-                    aviso.style.display = 'none';
-                    video.style.display = 'block';
-                    if (video.requestFullscreen) video.requestFullscreen().catch(() => {});
-                    modo = 'abertura';
-                    carregar(ANUNCIO_ABERTURA);
+            const key = e.key;
+            const code = e.keyCode;
+
+            if (!iniciado) {
+                if (key === 'Enter' || code === 13 || code === 66) {
+                    iniciarSessao();
                 }
                 return;
             }
 
-            // Controles depois de começar
-            e.preventDefault();
-            switch(e.keyCode) {
-                case 37: anterior(); break;
-                case 39: proximo(); break;
-                case 38: video.classList.remove("controles-ocultos"); break;
-                case 40: video.classList.add("controles-ocultos"); break;
-                case 13: case 66:
-                    video.paused ? video.play() : video.pause();
-                    break;
+            if (key === 'ArrowLeft' || code === 37 || code === 227) {
+                e.preventDefault();
+                anterior();
+            } 
+            else if (key === 'ArrowRight' || code === 39 || code === 228) {
+                e.preventDefault();
+                proximo();
+            } 
+            else if (key === 'ArrowUp' || code === 38) {
+                e.preventDefault();
+                video.classList.remove("controles-ocultos");
+            } 
+            else if (key === 'ArrowDown' || code === 40) {
+                e.preventDefault();
+                video.classList.add("controles-ocultos");
+            } 
+            else if (key === 'Enter' || code === 13 || code === 66 || code === 179) {
+                e.preventDefault();
+                video.paused ? video.play() : video.pause();
             }
         });
 
-        // Ao terminar um vídeo, vai para o próximo
         video.addEventListener('ended', proximo);
 
-        window.addEventListener('load', () => aviso.focus());
+        window.addEventListener('load', () => {
+            carregarPlaylist();
+            aviso.focus();
+        });
     </script>
 </body>
 </html>
