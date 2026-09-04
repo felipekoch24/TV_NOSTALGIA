@@ -21,7 +21,7 @@
             position: absolute;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            padding: 2rem; 
+            padding: 2.5rem; 
             font-size: 1.8rem; 
             text-align: center;
             background: #8b4513; 
@@ -32,7 +32,67 @@
             cursor: pointer;
             width: 85%;
             max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
+        #aviso h1 {
+            font-size: 2.2rem;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+            color: #ffcc00;
+        }
+        #aviso p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        /* Tela de Carregamento Estilizada (Spinner + Porcentagem) */
+        #carregando {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: #050505;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 15;
+            color: #fff;
+        }
+        .spinner {
+            width: 70px;
+            height: 70px;
+            border: 6px solid rgba(255, 204, 0, 0.2);
+            border-top: 6px solid #ffcc00;
+            border-radius: 50%;
+            animation: girar 1s linear infinite;
+            margin-bottom: 25px;
+        }
+        @keyframes girar {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #texto-carregando {
+            font-size: 1.6rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            color: #ffcc00;
+            margin-bottom: 10px;
+        }
+        #barra-progresso-carregamento {
+            width: 280px;
+            height: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+        #progresso-interno {
+            width: 0%;
+            height: 100%;
+            background: #ffcc00;
+            transition: width 0.2s ease;
+        }
+
         #player { 
             width: 100vw; 
             height: 100vh; 
@@ -66,12 +126,28 @@
 <body>
 
     <div id="dev-hud">MODO DEV ATIVO</div>
-    <div id="aviso" tabindex="0">Aperte ENTER ou TOQUE na tela para começar</div>
+    
+    <div id="aviso" tabindex="0">
+        <h1>📺 Sessão Nostalgia</h1>
+        <p>Aperte ENTER ou TOQUE na tela para começar</p>
+    </div>
+
+    <div id="carregando">
+        <div class="spinner"></div>
+        <div id="texto-carregando">Sessão Nostalgia - Carregando (0%)</div>
+        <div id="barra-progresso-carregamento">
+            <div id="progresso-interno"></div>
+        </div>
+    </div>
+
     <video id="player" playsinline webkit-playsinline controls class="controles-ocultos"></video>
 
     <script>
         const video = document.getElementById('player');
         const aviso = document.getElementById('aviso');
+        const carregando = document.getElementById('carregando');
+        const textoCarregando = document.getElementById('texto-carregando');
+        const progressoInterno = document.getElementById('progresso-interno');
         const devHud = document.getElementById('dev-hud');
         
         let hls = null;
@@ -79,7 +155,6 @@
         let modo = 'abertura';
         let iniciado = false;
 
-        // Ativa o Modo Dev se tiver ?dev=true na URL ou se pressionar a tecla 'D'
         const urlParams = new URLSearchParams(window.location.search);
         let MODO_DEV = urlParams.get('dev') === 'true';
 
@@ -113,7 +188,6 @@
                 ANUNCIO_ENTRE = dados.anuncios.entre_episodios;
                 
                 EPISODIOS = dados.episodios;
-                // No modo dev mantém a ordem original para facilitar o teste por ID, senão embaralha
                 if (!MODO_DEV) {
                     embaralhar(EPISODIOS);
                 }
@@ -126,18 +200,42 @@
             if (!url) return;
             atualizarHud();
 
+            // Destrói instância HLS anterior para evitar conflito de memória/streams travadas
+            if (hls) {
+                hls.destroy();
+                hls = null;
+            }
+            video.pause();
+            video.removeAttribute('src');
+            video.load();
+
             if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                if (hls) { hls.destroy(); hls = null; }
                 video.src = url;
                 video.play().catch(() => proximo());
             } 
             else if (Hls.isSupported()) {
-                if (hls) hls.destroy();
-                hls = new Hls({ maxBufferSize: 30 * 1000 * 1000, enableWorker: true });
+                hls = new Hls({ 
+                    maxBufferSize: 30 * 1000 * 1000, 
+                    enableWorker: true,
+                    xhrSetup: function (xhr, url) {
+                        // Garante compatibilidade com arquivos CORS do GitHub Raw
+                        xhr.withCredentials = false;
+                    }
+                });
                 hls.loadSource(url);
                 hls.attachMedia(video);
-                hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
-                hls.on(Hls.Events.ERROR, (_, e) => { if (e.fatal) { hls.destroy(); proximo(); } });
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    video.play().catch((err) => {
+                        console.warn("Autoplay bloqueado ou falhou:", err);
+                    });
+                });
+                hls.on(Hls.Events.ERROR, (_, data) => {
+                    if (data.fatal) {
+                        console.error("Erro fatal no HLS:", data);
+                        hls.destroy();
+                        proximo();
+                    }
+                });
             } else {
                 video.src = url;
                 video.play().catch(() => proximo());
@@ -173,20 +271,38 @@
         }
 
         function iniciarSessao() {
-            if (iniciado || !ANUNCIO_ABERTURA) return;
+            if (iniciado) return;
             iniciado = true;
 
             aviso.style.display = 'none';
-            video.style.display = 'block';
+            carregando.style.display = 'flex';
 
-            if (video.requestFullscreen) {
-                video.requestFullscreen().catch(() => {});
-            } else if (video.webkitRequestFullscreen) {
-                video.webkitRequestFullscreen().catch(() => {});
-            }
+            let progresso = 0;
+            const intervaloSimulacao = setInterval(() => {
+                progresso += 2;
+                if (progresso > 100) progresso = 100;
+                
+                textoCarregando.innerText = `Sessão Nostalgia - Carregando (${progresso}%)`;
+                progressoInterno.style.width = `${progresso}%`;
 
-            modo = 'abertura';
-            carregar(ANUNCIO_ABERTURA);
+                if (progresso >= 100) {
+                    clearInterval(intervaloSimulacao);
+                    
+                    setTimeout(() => {
+                        carregando.style.display = 'none';
+                        video.style.display = 'block';
+
+                        if (video.requestFullscreen) {
+                            video.requestFullscreen().catch(() => {});
+                        } else if (video.webkitRequestFullscreen) {
+                            video.webkitRequestFullscreen().catch(() => {});
+                        }
+
+                        modo = 'abertura';
+                        carregar(ANUNCIO_ABERTURA);
+                    }, 400);
+                }
+            }, 100); // 100ms * 50 passos = 5 segundos exatos de tela de carregamento
         }
 
         aviso.addEventListener('click', iniciarSessao);
@@ -199,7 +315,6 @@
             const key = e.key;
             const code = e.keyCode;
 
-            // Atalho universal para ativar/desativar MODO DEV a qualquer momento
             if (key === 'd' || key === 'D') {
                 MODO_DEV = !MODO_DEV;
                 devHud.style.display = MODO_DEV ? 'block' : 'none';
@@ -207,21 +322,17 @@
                 return;
             }
 
-            // ATALHOS EXCLUSIVOS DO MODO DEV
             if (MODO_DEV) {
-                // Tecla S: Força pular a mídia atual imediatamente (anúncio ou episódio)
                 if (key === 's' || key === 'S') {
                     proximo();
                     return;
                 }
-                // Tecla A: Força voltar para o episódio anterior
                 if (key === 'a' || key === 'A') {
                     modo = 'episodio';
                     indice = (indice - 1 + EPISODIOS.length) % EPISODIOS.length;
                     carregar(EPISODIOS[indice].url);
                     return;
                 }
-                // Teclas de 1 a 9: Pula diretamente para o número do episódio correspondente
                 if (key >= '1' && key <= '9') {
                     const num = parseInt(key) - 1;
                     if (num < EPISODIOS.length) {
@@ -240,7 +351,6 @@
                 return;
             }
 
-            // CONTROLES PADRÃO (USUÁRIO)
             if (key === 'ArrowLeft' || code === 37 || code === 227) {
                 e.preventDefault();
                 anterior();
