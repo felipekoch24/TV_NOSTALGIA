@@ -200,7 +200,7 @@
             if (!url) return;
             atualizarHud();
 
-            // Destrói instância HLS anterior para evitar conflito de memória/streams travadas
+            // Limpa instâncias anteriores para evitar travar o player
             if (hls) {
                 hls.destroy();
                 hls = null;
@@ -218,7 +218,6 @@
                     maxBufferSize: 30 * 1000 * 1000, 
                     enableWorker: true,
                     xhrSetup: function (xhr, url) {
-                        // Garante compatibilidade com arquivos CORS do GitHub Raw
                         xhr.withCredentials = false;
                     }
                 });
@@ -226,7 +225,7 @@
                 hls.attachMedia(video);
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
                     video.play().catch((err) => {
-                        console.warn("Autoplay bloqueado ou falhou:", err);
+                        console.warn("Autoplay bloqueado:", err);
                     });
                 });
                 hls.on(Hls.Events.ERROR, (_, data) => {
@@ -302,7 +301,7 @@
                         carregar(ANUNCIO_ABERTURA);
                     }, 400);
                 }
-            }, 100); // 100ms * 50 passos = 5 segundos exatos de tela de carregamento
+            }, 100); // 100ms * 50 passos = 5 segundos exatos de carregamento
         }
 
         aviso.addEventListener('click', iniciarSessao);
