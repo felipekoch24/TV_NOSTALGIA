@@ -60,7 +60,7 @@ async function carregarPlaylist() {
 
 function carregar(url) {
     if (!url) {
-        console.warn("URL vazia, pulando...");
+        console.warn("URL não encontrada, pulando para a próxima...");
         proximo();
         return;
     }
@@ -69,36 +69,46 @@ function carregar(url) {
         hls.destroy();
         hls = null;
     }
+
     video.pause();
     video.removeAttribute('src');
     video.load();
 
-    const tentarTocar = () => {
-        video.play().catch(e => {
-            console.warn("Autoplay bloqueado pelo navegador, tentando no mudo:", e);
-            video.muted = true;
-            video.play().catch(() => proximo());
-        });
+    // Força o vídeo a ficar DESMUTADO
+    video.muted = false;
+    video.volume = 1.0;
+
+    const executarPlayer = () => {
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(erro => {
+                console.warn("Erro ao iniciar áudio/vídeo:", erro);
+                // Se der erro de mídia, avança automaticamente
+                proximo();
+            });
+        }
     };
 
     if (Hls.isSupported()) {
         hls = new Hls({ enableWorker: true });
         hls.loadSource(url);
         hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, tentarTocar);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            executarPlayer();
+        });
         hls.on(Hls.Events.ERROR, (_, data) => {
             if (data.fatal) {
-                console.error("Erro fatal no HLS ao carregar:", url);
+                console.error("Erro no arquivo HLS:", url);
                 hls.destroy();
                 proximo();
             }
         });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = url;
-        tentarTocar();
+        executarPlayer();
     } else {
         video.src = url;
-        tentarTocar();
+        executarPlayer();
     }
 }
 
@@ -124,6 +134,11 @@ async function iniciarSessao() {
     if (iniciado) return;
     iniciado = true;
 
+    // Desbloqueia a permissão de áudio do navegador através da ação do clique do usuário
+    video.muted = false;
+    video.play().catch(() => {}); 
+    video.pause();
+
     aviso.style.display = 'none';
     carregando.style.display = 'flex';
 
@@ -133,7 +148,7 @@ async function iniciarSessao() {
 
     let progresso = 0;
     const intervaloSimulacao = setInterval(() => {
-        progresso += 5;
+        progresso += 10;
         if (progresso > 100) progresso = 100;
         
         textoCarregando.innerText = `Sintonizando Canal (${progresso}%)`;
@@ -142,17 +157,15 @@ async function iniciarSessao() {
         if (progresso >= 100) {
             clearInterval(intervaloSimulacao);
             
-            setTimeout(() => {
-                carregando.style.display = 'none';
-                video.style.display = 'block';
+            carregando.style.display = 'none';
+            video.style.display = 'block';
 
-                if (video.requestFullscreen) {
-                    video.requestFullscreen().catch(() => {});
-                }
+            if (video.requestFullscreen) {
+                video.requestFullscreen().catch(() => {});
+            }
 
-                modo = 'abertura';
-                carregar(ANUNCIO_ABERTURA);
-            }, 200);
+            modo = 'abertura';
+            carregar(ANUNCIO_ABERTURA);
         }
     }, 50);
 }
