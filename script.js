@@ -27,16 +27,12 @@ function embaralhar(array) {
 }
 
 function obterProximoEpisodio() {
-    if (filaEpisodios.length === 0) {
-        filaEpisodios = embaralhar(EPISODIOS);
-    }
+    if (filaEpisodios.length === 0) filaEpisodios = embaralhar(EPISODIOS);
     return filaEpisodios.pop();
 }
 
 function obterProximoAnuncio() {
-    if (filaAnuncios.length === 0) {
-        filaAnuncios = embaralhar(LISTA_ANUNCIOS);
-    }
+    if (filaAnuncios.length === 0) filaAnuncios = embaralhar(LISTA_ANUNCIOS);
     return filaAnuncios.pop();
 }
 
@@ -48,13 +44,9 @@ async function carregarPlaylist() {
         const dados = await resposta.json();
         
         ANUNCIO_ABERTURA = dados.anuncios.abertura;
-        
-        // Aceita se for array de anúncios ou apenas uma string única no JSON
-        if (Array.isArray(dados.anuncios.entre_episodios)) {
-            LISTA_ANUNCIOS = dados.anuncios.entre_episodios;
-        } else {
-            LISTA_ANUNCIOS = [dados.anuncios.entre_episodios];
-        }
+        LISTA_ANUNCIOS = Array.isArray(dados.anuncios.entre_episodios) 
+            ? dados.anuncios.entre_episodios 
+            : [dados.anuncios.entre_episodios];
 
         EPISODIOS = dados.episodios;
 
@@ -67,7 +59,11 @@ async function carregarPlaylist() {
 }
 
 function carregar(url) {
-    if (!url) return;
+    if (!url) {
+        console.warn("URL vazia, pulando...");
+        proximo();
+        return;
+    }
 
     if (hls) {
         hls.destroy();
@@ -77,34 +73,32 @@ function carregar(url) {
     video.removeAttribute('src');
     video.load();
 
-    if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = url;
-        video.play().catch(() => proximo());
-    } 
-    else if (Hls.isSupported()) {
-        hls = new Hls({ 
-            maxBufferSize: 30 * 1000 * 1000, 
-            enableWorker: true,
-            xhrSetup: function (xhr) {
-                xhr.withCredentials = false;
-            }
+    const tentarTocar = () => {
+        video.play().catch(e => {
+            console.warn("Autoplay bloqueado pelo navegador, tentando no mudo:", e);
+            video.muted = true;
+            video.play().catch(() => proximo());
         });
+    };
+
+    if (Hls.isSupported()) {
+        hls = new Hls({ enableWorker: true });
         hls.loadSource(url);
         hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            video.play().catch((err) => {
-                console.warn("Autoplay bloqueado:", err);
-            });
-        });
+        hls.on(Hls.Events.MANIFEST_PARSED, tentarTocar);
         hls.on(Hls.Events.ERROR, (_, data) => {
             if (data.fatal) {
+                console.error("Erro fatal no HLS ao carregar:", url);
                 hls.destroy();
                 proximo();
             }
         });
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = url;
+        tentarTocar();
     } else {
         video.src = url;
-        video.play().catch(() => proximo());
+        tentarTocar();
     }
 }
 
@@ -114,7 +108,7 @@ function proximo() {
     if (modo === 'abertura') {
         modo = 'episodio';
         const ep = obterProximoEpisodio();
-        carregar(ep.url);
+        carregar(ep ? ep.url : null);
     } else if (modo === 'episodio') {
         modo = 'anuncio';
         const anuncio = obterProximoAnuncio();
@@ -122,15 +116,8 @@ function proximo() {
     } else if (modo === 'anuncio') {
         modo = 'episodio';
         const ep = obterProximoEpisodio();
-        carregar(ep.url);
+        carregar(ep ? ep.url : null);
     }
-}
-
-function anterior() {
-    if (EPISODIOS.length === 0) return;
-    modo = 'anuncio';
-    const anuncio = obterProximoAnuncio();
-    carregar(anuncio);
 }
 
 async function iniciarSessao() {
@@ -146,7 +133,7 @@ async function iniciarSessao() {
 
     let progresso = 0;
     const intervaloSimulacao = setInterval(() => {
-        progresso += 4;
+        progresso += 5;
         if (progresso > 100) progresso = 100;
         
         textoCarregando.innerText = `Sintonizando Canal (${progresso}%)`;
@@ -161,15 +148,13 @@ async function iniciarSessao() {
 
                 if (video.requestFullscreen) {
                     video.requestFullscreen().catch(() => {});
-                } else if (video.webkitRequestFullscreen) {
-                    video.webkitRequestFullscreen().catch(() => {});
                 }
 
                 modo = 'abertura';
                 carregar(ANUNCIO_ABERTURA);
-            }, 300);
+            }, 200);
         }
-    }, 80);
+    }, 50);
 }
 
 aviso.addEventListener('click', iniciarSessao);
@@ -179,27 +164,13 @@ aviso.addEventListener('touchstart', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
-    const key = e.key;
-    const code = e.keyCode;
-
     if (!iniciado) {
-        if (key === 'Enter' || code === 13 || code === 66) {
-            iniciarSessao();
-        }
+        if (e.key === 'Enter' || e.keyCode === 13) iniciarSessao();
         return;
     }
 
-    // Troca de canal (setas do controle remoto / teclado)
-    if (key === 'ArrowLeft' || code === 37 || code === 227) {
-        e.preventDefault();
-        anterior();
-    } 
-    else if (key === 'ArrowRight' || code === 39 || code === 228) {
-        e.preventDefault();
-        proximo();
-    } 
-    else if (key === 'Enter' || code === 13 || code === 66 || code === 179) {
-        e.preventDefault();
+    if (e.key === 'ArrowRight' || e.keyCode === 39) proximo();
+    if (e.key === 'Enter' || e.keyCode === 13) {
         video.paused ? video.play() : video.pause();
     }
 });
