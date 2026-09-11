@@ -1,0 +1,123 @@
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+}
+
+body { 
+    background-color: #000;
+    
+    /* ADICIONE ESTAS LINHAS ABAIXO */
+    background-image: url('fundo-nostalgia3.png');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    
+    font-family: 'Courier New', Courier, monospace; 
+    color: #fff;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#aviso { 
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 2.5rem; 
+    font-size: 1.8rem; 
+    text-align: center;
+    
+    /* ALTERE ESTA LINHA (para dar transparência e ler melhor o fundo) */
+    background: rgba(17, 17, 17, 0.85); 
+    backdrop-filter: blur(5px); /* Adiciona um leve desfoque elegante */
+    
+    color: white; 
+    border-radius: 16px; 
+    z-index: 10;
+    border: 3px solid #ffcc00;
+    cursor: pointer;
+    width: 85%;
+    max-width: 500px;
+    box-shadow: 0 0 20px rgba(255, 204, 0, 0.4);
+}
+
+#aviso h1 {
+    font-size: 2.2rem;
+    margin-bottom: 15px;
+    color: #ffcc00;
+}
+
+#aviso p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+#carregando {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: #000;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 15;
+    color: #fff;
+}
+
+.spinner {
+    width: 70px;
+    height: 70px;
+    border: 6px solid rgba(255, 204, 0, 0.1);
+    border-top: 6px solid #ffcc00;
+    border-radius: 50%;
+    animation: girar 1s linear infinite;
+    margin-bottom: 25px;
+}
+
+@keyframes girar {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#texto-carregando {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #ffcc00;
+    margin-bottom: 10px;
+}
+
+#barra-progresso-carregamento {
+    width: 280px;
+    height: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 15px;
+}
+
+#progresso-interno {
+    width: 0%;
+    height: 100%;
+    background: #ffcc00;
+    transition: width 0.2s ease;
+}
+
+#player { 
+    width: 100vw; 
+    height: 100vh; 
+    display: none; 
+    background: #000;
+    object-fit: contain;
+}
+
+.controles-ocultos::-webkit-media-controls {
+    display: none !important;
+}
+
+.controles-ocultos {
+    -webkit-appearance: none;
+}
