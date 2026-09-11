@@ -40,6 +40,26 @@
       "id": 7,
       "nome": "Nostalgia 05",
       "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia05/nostalgia05.m3u8"
+    },
+    {
+      "id": 8,
+      "nome": "Nostalgia 06",
+      "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia06/index.m3u8"
+    },
+    {
+      "id": 9,
+      "nome": "Nostalgia 07",
+      "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia07/index.m3u8"
+    },
+    {
+      "id": 10,
+      "nome": "Nostalgia 08",
+      "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia08/index.m3u8"
+    },
+    {
+      "id": 11,
+      "nome": "Nostalgia 09",
+      "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia09/index.m3u8"
     }
   ]
 }
