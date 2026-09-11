@@ -5,7 +5,14 @@
 }
 
 body { 
-    background: #000; 
+    background-color: #000;
+    
+    /* ADICIONE ESTAS LINHAS ABAIXO */
+    background-image: url('fundo-nostalgia3.png');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    
     font-family: 'Courier New', Courier, monospace; 
     color: #fff;
     height: 100vh;
@@ -22,7 +29,11 @@ body {
     padding: 2.5rem; 
     font-size: 1.8rem; 
     text-align: center;
-    background: #111; 
+    
+    /* ALTERE ESTA LINHA (para dar transparência e ler melhor o fundo) */
+    background: rgba(17, 17, 17, 0.85); 
+    backdrop-filter: blur(5px); /* Adiciona um leve desfoque elegante */
+    
     color: white; 
     border-radius: 16px; 
     z-index: 10;
