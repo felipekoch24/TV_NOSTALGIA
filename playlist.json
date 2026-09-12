@@ -75,6 +75,11 @@
       "id": 14,
       "nome": "Nostalgia 12",
       "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia12/index.m3u8"
+    },
+    {
+      "id": 15,
+      "nome": "Nostalgia 13",
+      "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia13/index.m3u8"
     }
   ]
 }
