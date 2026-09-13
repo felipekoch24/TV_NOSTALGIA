@@ -2,7 +2,8 @@
   "anuncios": {
     "abertura": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/anuncios/abertura01.m3u8",
     "entre_episodios": [
-      "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/anuncios/anuncio02.m3u8"
+      "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/anuncios/anuncio02.m3u8",
+      "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/anuncio/anuncio2.m3u8"
     ]
   },
   "episodios": [
@@ -100,6 +101,11 @@
       "id": 19,
       "nome": "Nostalgia 17",
       "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia17/index.m3u8"
+    },
+    {
+      "id": 20,
+      "nome": "Nostalgia 18",
+      "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia18/index.m3u8"
     }
   ]
 }
