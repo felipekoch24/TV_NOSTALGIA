@@ -1,6 +1,9 @@
 {
   "anuncios": {
-    "abertura": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/abertura/abertura01.mp4",
+    "abertura": [
+      "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/abertura/abertura01.mp4",
+      "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/abertura/abertura2.mp4"
+    ],
     "entre_episodios": [
       "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/anuncios/anuncio02.m3u8",
       "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/anuncio/anuncio2.m3u8"
