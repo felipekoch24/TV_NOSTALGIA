@@ -83,13 +83,15 @@ function carregar(url) {
         if (playPromise !== undefined) {
             playPromise.catch(erro => {
                 console.warn("Erro ao iniciar áudio/vídeo:", erro);
-                // Se der erro de mídia, avança automaticamente
                 proximo();
             });
         }
     };
 
-    if (Hls.isSupported()) {
+    // Verifica se a URL é um arquivo de transmissão HLS (.m3u8)
+    const ehHLS = url.includes('.m3u8');
+
+    if (ehHLS && Hls.isSupported()) {
         hls = new Hls({ enableWorker: true });
         hls.loadSource(url);
         hls.attachMedia(video);
@@ -103,10 +105,8 @@ function carregar(url) {
                 proximo();
             }
         });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = url;
-        executarPlayer();
     } else {
+        // Reproduz MP4 direto ou usa player nativo do navegador
         video.src = url;
         executarPlayer();
     }
@@ -134,7 +134,7 @@ async function iniciarSessao() {
     if (iniciado) return;
     iniciado = true;
 
-    // Desbloqueia a permissão de áudio do navegador através da ação do clique do usuário
+    // Desbloqueia permissão de áudio no navegador
     video.muted = false;
     video.play().catch(() => {}); 
     video.pause();

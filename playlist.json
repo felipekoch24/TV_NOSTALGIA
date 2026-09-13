@@ -106,6 +106,41 @@
       "id": 20,
       "nome": "Nostalgia 18",
       "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia18/index.m3u8"
+    },
+    {
+      "id": 21,
+      "nome": "Nostalgia 19",
+      "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia19/index.m3u8"
+    },
+    {
+      "id": 22,
+      "nome": "Nostalgia 20",
+      "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia20/index.m3u8"
+    },
+    {
+      "id": 23,
+      "nome": "Nostalgia 21",
+      "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia21/index.m3u8"
+    },
+    {
+      "id": 24,
+      "nome": "Nostalgia 22",
+      "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia22/index.m3u8"
+    },
+    {
+      "id": 25,
+      "nome": "Nostalgia 23",
+      "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia23/index.m3u8"
+    },
+    {
+      "id": 26,
+      "nome": "Nostalgia 24",
+      "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia24/index.m3u8"
+    },
+    {
+      "id": 27,
+      "nome": "Nostalgia 25",
+      "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia25/index.m3u8"
     }
   ]
 }
