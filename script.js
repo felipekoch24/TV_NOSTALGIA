@@ -8,7 +8,7 @@ let hls = null;
 let modo = 'abertura';
 let iniciado = false;
 
-let ANUNCIO_ABERTURA = "";
+let LISTA_ABERTURAS = [];
 let LISTA_ANUNCIOS = [];
 let EPISODIOS = [];
 
@@ -36,6 +36,12 @@ function obterProximoAnuncio() {
     return filaAnuncios.pop();
 }
 
+function obterAberturaAleatoria() {
+    if (LISTA_ABERTURAS.length === 0) return "";
+    const idx = Math.floor(Math.random() * LISTA_ABERTURAS.length);
+    return LISTA_ABERTURAS[idx];
+}
+
 async function carregarPlaylist() {
     try {
         const resposta = await fetch(URL_PLAYLIST);
@@ -43,7 +49,11 @@ async function carregarPlaylist() {
         
         const dados = await resposta.json();
         
-        ANUNCIO_ABERTURA = dados.anuncios.abertura;
+        // Suporta tanto 1 abertura (String) quanto várias (Array)
+        LISTA_ABERTURAS = Array.isArray(dados.anuncios.abertura)
+            ? dados.anuncios.abertura
+            : [dados.anuncios.abertura];
+
         LISTA_ANUNCIOS = Array.isArray(dados.anuncios.entre_episodios) 
             ? dados.anuncios.entre_episodios 
             : [dados.anuncios.entre_episodios];
@@ -74,7 +84,6 @@ function carregar(url) {
     video.removeAttribute('src');
     video.load();
 
-    // Força o vídeo a ficar DESMUTADO
     video.muted = false;
     video.volume = 1.0;
 
@@ -88,7 +97,6 @@ function carregar(url) {
         }
     };
 
-    // Verifica se a URL é um arquivo de transmissão HLS (.m3u8)
     const ehHLS = url.includes('.m3u8');
 
     if (ehHLS && Hls.isSupported()) {
@@ -106,7 +114,6 @@ function carregar(url) {
             }
         });
     } else {
-        // Reproduz MP4 direto ou usa player nativo do navegador
         video.src = url;
         executarPlayer();
     }
@@ -134,7 +141,6 @@ async function iniciarSessao() {
     if (iniciado) return;
     iniciado = true;
 
-    // Desbloqueia permissão de áudio no navegador
     video.muted = false;
     video.play().catch(() => {}); 
     video.pause();
@@ -165,7 +171,7 @@ async function iniciarSessao() {
             }
 
             modo = 'abertura';
-            carregar(ANUNCIO_ABERTURA);
+            carregar(obterAberturaAleatoria());
         }
     }, 50);
 }

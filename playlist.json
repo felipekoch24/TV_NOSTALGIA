@@ -1,6 +1,9 @@
 {
   "anuncios": {
-    "abertura": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/abertura/abertura01.mp4",
+    "abertura": [
+      "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/abertura/abertura01.mp4",
+      "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/abertura/abertura2.mp4"
+    ],
     "entre_episodios": [
       "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/anuncios/anuncio02.m3u8",
       "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/anuncio/anuncio2.m3u8"
@@ -141,6 +144,31 @@
       "id": 27,
       "nome": "Nostalgia 25",
       "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia25/index.m3u8"
+    },
+    {
+      "id": 28,
+      "nome": "Nostalgia 26",
+      "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia26/index.m3u8"
+    },
+    {
+      "id": 29,
+      "nome": "Nostalgia 27",
+      "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia27/index.m3u8"
+    },
+    {
+      "id": 30,
+      "nome": "Nostalgia 28",
+      "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia28/index.m3u8"
+    },
+    {
+      "id": 31,
+      "nome": "Nostalgia 29",
+      "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia29/index.m3u8"
+    },
+    {
+      "id": 32,
+      "nome": "Nostalgia 30",
+      "url": "https://cdn.jsdelivr.net/gh/felipekoch24/TV_NOSTALGIA/nostalgia30/index.m3u8"
     }
   ]
 }
